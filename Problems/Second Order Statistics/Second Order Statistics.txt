@@ -1,0 +1,268 @@
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+import static com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type.Node;
+
+// Implementation of AVL tree with generics that supports repetitions
+public class AVL_tree <T extends Comparable<T>>{
+    class Node{ // helper class that holds value of type T and pointers to left and right and count of how many times this number has been repeated
+        // and the height of the subtree of this node.
+        T value;
+        Node left, right;
+        int count, height;
+        Node(){
+            value = null;
+            left = right = null;
+            count = height = 0;
+        }
+        Node(T temp){
+            value = temp;
+            left = right = null;
+            count = 1;
+            height = 1;
+        }
+    }
+
+    Node root; // The root where the tree starts
+    /*
+    // Function to do single rotation from the right(as specified in the tutorial)
+    // Complexity O(1)
+    Node rightRotate(Node pos) {
+        Node x = pos.left;
+        Node T2 = x.right;
+        x.right = pos;
+        pos.left = T2;
+        pos.height = Math.max(getheight(pos.left), getheight(pos.right)) + 1;
+        x.height = Math.max(getheight(x.left), getheight(x.right)) + 1;
+        return x;
+    }
+
+    // Function to do single rotation from the left(as specified in the tutorial)
+    // Complexity O(1)
+    Node leftRotate(Node pos) {
+        Node y = pos.right;
+        Node T2 = y.left;
+        y.left = pos;
+        pos.right = T2;
+        pos.height = Math.max(getheight(pos.left), getheight(pos.right)) + 1;
+        y.height = Math.max(getheight(y.left), getheight(y.right)) + 1;
+        return y;
+    }
+    */
+
+    Node rightRotate(Node y)
+    {
+        Node x = y.left;
+        Node T2 = x.right;
+
+        // Perform rotation
+        x.right = y;
+        y.left = T2;
+
+        // Update heights
+        y.height = Math.max(getheight(y.left), getheight(y.right)) + 1;
+        x.height = Math.max(getheight(x.left), getheight(x.right)) + 1;
+
+        // Return new root
+        return x;
+    }
+
+    // A utility function to left rotate subtree rooted with x
+    // See the diagram given above.
+    Node leftRotate(Node x)
+    {
+        Node y = x.right;
+        Node T2 = y.left;
+
+        // Perform rotation
+        y.left = x;
+        x.right = T2;
+
+        // Update heights
+        x.height = Math.max(getheight(x.left), getheight(x.right)) + 1;
+        y.height = Math.max(getheight(y.left), getheight(y.right)) + 1;
+
+        // Return new root
+        return y;
+    }
+
+    //Function to get the height of a Node. It is present only to care about cases where the Node is null. That why we won't get NullPointerException.
+    // Complexity O(1)
+    int getheight(Node pos){
+        if(pos == null) return 0;
+        return pos.height;
+    }
+
+    // Function to insert a new Node into the tree and deal with the imbalance that will happen. It is a recursive function.
+    // It depends on where we are in the tree (Node pos) and the value we want to store in the tree (T val)
+    // Complexity O(height of the tree) = O(log(# of Nodes))
+    Node insert(Node pos, T val){
+        if(pos == null){ // If we reach a null Node just put the value in it.
+            pos = new Node(val);
+            return pos; // Return the node so the previous function call can sort the imbalance in case it happens.
+        }
+        if(val.compareTo(pos.value) < 0){ // val is lower than the value in the current node.
+            pos.left = insert(pos.left, val); // do a function call to the left.
+        }
+        else if(val.compareTo(pos.value) > 0){ // val is higher than the value in the current node.
+            pos.right = insert(pos.right, val); // do a function call to the right.
+        }
+        else { // the value is equal to the value in our node that means we only increase the number of repetitions in this node.
+            pos.count++;
+            return pos;
+        }
+        pos.height = 1 + Math.max(getheight(pos.left), getheight(pos.right)); // Calculate the new height after modifying either the left or right child of this node.
+        int check = getheight(pos.left) - getheight(pos.right); // check the imbalance in the height of the children.
+        if (check > 1 && (val.compareTo(pos.left.value) < 0)) // Left left case of imbalance. We deal with it with one right rotation.
+            return rightRotate(pos);
+        if (check < -1 && (val.compareTo(pos.right.value) > 0)) // Right right case of imbalance. We deal with it with one left rotation.
+            return leftRotate(pos);
+        if (check > 1 && (val.compareTo(pos.left.value) > 0)) { // Left right case of imbalance. We deal with it with a left rotation then a right rotation.
+            pos.left = leftRotate(pos.left);
+            return rightRotate(pos);
+        }
+        if (check < -1 && (val.compareTo(pos.right.value) < 0)) { // Right left case of imbalance. We deal with it with a right rotation then a left rotation.
+            pos.right = rightRotate(pos.right);
+            return leftRotate(pos);
+        }
+        return pos; // If we reach this it means that the node wasn't imbalanced after the modification of our child.
+    }
+
+    // Get the minimum value in a tree (will help us for later). It recursively calls the left child.
+    // Complexity O(height of the tree) = O(log(# of Nodes))
+    Node getminvalue(Node pos){
+        if(pos.left != null)  return getminvalue(pos.left);
+        return pos;
+    }
+
+    // Function that deletes a node from the tree and deals with the imbalance caused It is a recursive function.
+    // It depends on where we are in the tree (Node pos) and the value we want to delete in the tree (T val)
+    // Complexity O(height of the tree) = O(log(# of Nodes))
+    Node delete(Node pos, T val)
+    {
+        if(pos == null){ // we only reach this place if we try to delete a value that is not present in the tree.
+            return null;
+        }
+        if (val.compareTo(pos.value) < 0) // Go to left child if the val < pos.value
+            pos.left = delete(pos.left, val);
+        else if (val.compareTo(pos.value) > 0) // Go to right child if the val > pos.value
+            pos.right = delete(pos.right, val);
+        else // if val == pos.value
+        {
+            if(pos.count > 1) { // if there are more than one repetition of this value then delete one repetition and go back
+                // Since there will be no imbalance in the tree because we didn't delete the node.
+                pos.count--;
+                return pos;
+            }
+            if ((pos.left == null) || (pos.right == null)) { // Here we deal with the case where there is one or zero children for this node.
+                Node temp; // temp will be the child of pos
+                if (pos.left == null)
+                    temp = pos.right;
+                else
+                    temp = pos.left;
+                if (temp == null) { // if the node has no children then just delete it.
+                    temp = pos;
+                    pos = null;
+                }
+                else pos = temp; // else replace the node with its child
+            } else { // if the node has 2 children.
+                Node temp = getminvalue(pos.right); // get the lowest value in the right subtree.
+                pos.value = temp.value; // replace pos value and repartition with temp value and repartition.
+                pos.count = temp.count;
+                pos.right = delete(pos.right, temp.value); // delete temp.
+            }
+        }
+        if (pos == null) return pos;
+
+        // the next lines are almost identical to the last 10 lines in the insertion method.
+        pos.height = Math.max(getheight(pos.left), getheight(pos.right)) + 1;
+        int check = getheight(pos.left) - getheight(pos.right);
+        if (check > 1 && (getheight(pos.left.left) - getheight(pos.right.right)) >= 0)
+            return rightRotate(pos);
+        if (check < -1 && (getheight(pos.right.left) - getheight(pos.right.right)) <= 0)
+            return leftRotate(pos);
+        if (check > 1 && (getheight(pos.left.left) - getheight(pos.left.right)) < 0) {
+            pos.left = leftRotate(pos.left);
+            return rightRotate(pos);
+        }
+        if (check < -1 && (getheight(pos.right.left) - getheight(pos.right.right)) > 0) {
+            pos.right = rightRotate(pos.right);
+            return leftRotate(pos);
+        }
+        return pos;
+    }
+
+    // This is a helper function to print the tree and make sure it is alright. It helps in the Test class.
+    // Complexity O(# of nodes)
+    void show(Node pos){
+        if(pos == null) return;
+        show(pos.left);
+        for(int i = 0 ; i < pos.count ; i++)
+            System.out.println(pos.value);
+        show(pos.right);
+    }
+
+    boolean Find(Node pos, T val){
+        if(pos == null) return false;
+        if(pos.value == val) return true;
+        if(val.compareTo(pos.value) > 0){
+            return Find(pos.right, val);
+        }
+        else return Find(pos.left, val);
+    }
+
+    Node Q(Node pos){
+        if(pos.left == null)  return pos;
+        if(pos.left.left == null)  return pos.left;
+        return Q(pos.left);
+    }
+
+    // Main function of this class. It calls a test to check the correctness of the tree.
+    public static void main(String args[]){
+        AVL_tree <Integer> tree = new AVL_tree<>();
+        Scanner in = new Scanner(System.in);
+        int n = in.nextInt();
+        int x;
+        x = in.nextInt();
+        tree.root = tree.new Node(x);
+        for (int i = 1; i < n; i++) {
+            x = in.nextInt();
+            if(!tree.Find(tree.root, x)) {
+                tree.root = tree.insert(tree.root, x);
+            }
+        }
+        if(tree.root.left == null && tree.root.right == null){
+            System.out.println("NO");
+        } else{
+            tree.root = tree.delete(tree.root, tree.getminvalue(tree.root).value);
+            System.out.println(tree.Q(tree.root).value);
+        }
+    }
+}
+
+class Test{
+    public static void test(){
+        AVL_tree<Integer> tree = new AVL_tree<Integer>();
+        tree.root = new AVL_tree<Integer>().new Node(5);
+        tree.insert(tree.root, 1);
+        tree.insert(tree.root, -5);
+        tree.insert(tree.root, 10);
+        tree.insert(tree.root, 3);
+        tree.insert(tree.root, 19);
+        tree.insert(tree.root, 1000);
+        tree.insert(tree.root, -357);
+        tree.insert(tree.root, 1);
+        tree.show(tree.root);
+        System.out.println("-------------------------");
+        tree.delete(tree.root, 1);
+        tree.delete(tree.root, -5);
+        tree.delete(tree.root, 10);
+        tree.show(tree.root);
+        System.out.println("-------------------------");
+        tree.delete(tree.root, 1);
+        tree.show(tree.root);
+    }
+}

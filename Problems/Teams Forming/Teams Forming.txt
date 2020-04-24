@@ -1,0 +1,52 @@
+import java.util.Scanner;
+import java.util.Stack;
+
+
+public class Main {
+
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+        int n = input.nextInt();
+        int[] Arr = new int[n + 5];
+        for(int i = 0 ; i < n ; i++){
+            Arr[i] = input.nextInt();
+        }
+        Stack < Integer > s = new Stack < Integer >();
+        s.push(0);
+        s.push(n - 1);
+        int temp;
+        while(!s.empty()){
+            int en = s.pop();
+            int st = s.pop();
+            int i = st, j = en - 1;
+            while(i < j){
+                if(Arr[i] >= Arr[en]) i++;
+                else if(Arr[j] < Arr[en]) j--;
+                else {
+                    temp = Arr[i];
+                    Arr[i] = Arr[j];
+                    Arr[j] = temp;
+                }
+            }
+            if(Arr[i] > Arr[en]){
+                i++;
+            }
+            temp = Arr[en];
+            Arr[en] = Arr[i];
+            Arr[i] = temp;
+            if(en - i > 1) {
+                s.push(i + 1);
+                s.push(en);
+            }
+            if(i - st >= 1) {
+                s.push(st);
+                s.push(i - 1);
+            }
+        }
+        int ans = 0;
+        for(int i = 0 ; i < n ; i += 2){
+            ans += Arr[i] - Arr[i + 1];
+        }
+        System.out.println(ans);
+    }
+}
